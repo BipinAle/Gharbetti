@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.example.bipin.gharbetti.MainActivity">
+    tools:context=".activities.HomeActivity">
 
     <!--
       -->
@@ -42,6 +42,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:tabMode="scrollable"
+                android:background="@color/colorPrimaryDark"
                 app:theme="@style/Base.ThemeOverlay.AppCompat.Dark">
 
             </android.support.design.widget.TabLayout>

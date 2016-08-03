@@ -1,4 +1,4 @@
-package com.example.bipin.gharbetti;
+package com.example.bipin.gharbetti.adapters;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
