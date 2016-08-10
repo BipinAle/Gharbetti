@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import com.example.bipin.gharbetti.R;
+import com.example.bipin.gharbetti.utility.Utilities;
 import com.facebook.AccessToken;
 import com.facebook.AccessTokenTracker;
 import com.facebook.CallbackManager;
@@ -27,15 +28,17 @@ import com.facebook.ProfileTracker;
 import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private Button loginBt, signUpBt;
-    private LoginButton fbtLogin;
-    private CallbackManager mcallbackManager;
+    LoginButton fbtLogin;
+    CallbackManager mcallbackManager;
     private EditText usernameEt;
     private EditText passwordEt;
     AccessTokenTracker tokenTracker;
@@ -46,47 +49,82 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         super.onCreate(savedInstanceState);
         FacebookSdk.sdkInitialize(this);
         setContentView(R.layout.activity_login);
-
+        Utilities.networkOnMainThreadException();
         //this if case is to avoid Caused by: android.os.NetworkOnMainThreadException error
-        networkOnMainThreadSolve();
-        tracerinit();
+        Utilities.tracerinit(profileTracker,tokenTracker);
         AppEventsLogger.activateApp(this);
 
 
         usernameEt = (EditText) findViewById(R.id.username);
         passwordEt = (EditText) findViewById(R.id.password);
-        loginBt = (Button) findViewById(R.id.login);
-        signUpBt = (Button) findViewById(R.id.signUp);
+        Button loginBt = (Button) findViewById(R.id.login);
+        Button signUpBt = (Button) findViewById(R.id.signUp);
         fbtLogin = (LoginButton) findViewById(R.id.login_button);
+
+        fbtLogin.setReadPermissions(Arrays.asList(
+                "public_profile", "user_email", "user_birthday", "user_friends"));
         mcallbackManager = CallbackManager.Factory.create();
-        fbtLogin.setReadPermissions("public_profile");
+
 
         FacebookCallback<LoginResult> callback = new FacebookCallback<LoginResult>() {
+
+
             @Override
             public void onSuccess(LoginResult loginResult) {
                 //Naam ko lagi
-                if (Profile.getCurrentProfile()==null)
-                {
-                    profileTracker = new ProfileTracker() {
-                        @Override
-                        protected void onCurrentProfileChanged(Profile oldProfile, Profile newProfile) {
-                           String name=newProfile.getName();
+//                if (Profile.getCurrentProfile()==null)
+//                {
+//                    profileTracker = new ProfileTracker() {
+//                        @Override
+//                        protected void onCurrentProfileChanged(Profile oldProfile, Profile newProfile) {
+//                            Log.e("profileDetail", String.valueOf(newProfile.getProfilePictureUri(20,19)));
+//                           String name=newProfile.getName();
+//                            SharedPreferences prefs=getSharedPreferences("FbName",MODE_PRIVATE);
+//                            SharedPreferences.Editor editor=prefs.edit();
+//                            editor.putString("profileName",name);
+//                            editor.apply();
+//                            profileTracker.stopTracking();
+//                        }
+//                    };
+//                }else {
+//                    Profile unChanged=Profile.getCurrentProfile();
+//                    Log.e("profileDetail",unChanged.toString());
+//                   String name=unChanged.getName();
+//                    SharedPreferences prefs=getSharedPreferences("FbName",MODE_PRIVATE);
+//                    SharedPreferences.Editor editor=prefs.edit();
+//                    editor.putString("profileName",name);
+//                    editor.apply();
+//                }
 
-                            SharedPreferences prefs=getSharedPreferences("FbName",MODE_PRIVATE);
-                            SharedPreferences.Editor editor=prefs.edit();
-                            editor.putString("profileName",name);
-                            editor.apply();
-                            profileTracker.stopTracking();
-                        }
-                    };
-                }else {
-                    Profile unChanged=Profile.getCurrentProfile();
-                   String name=unChanged.getName();
-                    SharedPreferences prefs=getSharedPreferences("FbName",MODE_PRIVATE);
-                    SharedPreferences.Editor editor=prefs.edit();
-                    editor.putString("profileName",name);
-                    editor.apply();
-                }
+                final GraphRequest request = GraphRequest.newMeRequest(
+                        loginResult.getAccessToken(),
+                        new GraphRequest.GraphJSONObjectCallback() {
+                            @Override
+                            public void onCompleted(
+                                    JSONObject object,
+                                    GraphResponse response) {
+                                // Application code
+                                Log.e("LoginActivity", response.toString());
+                                try {
+                                    JSONObject obj=response.getJSONObject();
+                                    String name=obj.getString("name");
+                                    String email=obj.getString("email");
+                                    Log.e("name",name+email);
+                                    SharedPreferences prefs=getSharedPreferences("fbDetail",MODE_PRIVATE);
+                                    SharedPreferences.Editor editor=prefs.edit();
+                                    editor.putString("profilename",name);
+                                    editor.putString("profileEmail",email);
+                                    editor.apply();
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        });
+                Bundle parameters = new Bundle();
+                parameters.putString("fields", "id,name,email,gender, birthday");
+                request.setParameters(parameters);
+                request.executeAsync();
                 //profile pic ko lagi
                 final Bundle params = new Bundle();
                 params.putString("fields", "id,gender,cover,picture.type(large)");
@@ -112,7 +150,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                                 }
                             }
                         });
+
                 graphRequest.executeAsync();
+
             }
 
             @Override
@@ -133,38 +173,18 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
             fbtLogin.registerCallback(mcallbackManager, callback);
 
+
         loginBt.setOnClickListener(this);
         signUpBt.setOnClickListener(this);
     }
 
-    private void networkOnMainThreadSolve() {
-        if (android.os.Build.VERSION.SDK_INT > 9) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-        }
-    }
-
-    private void tracerinit() {
-        tokenTracker = new AccessTokenTracker() {
-            @Override
-            protected void onCurrentAccessTokenChanged(AccessToken oldAccessToken, AccessToken currentAccessToken) {
-
-            }
-        };
-        profileTracker = new ProfileTracker() {
-            @Override
-            protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
 
 
-            }
-
-        };
-    }
 
 
     public static Bitmap getFacebookProfilePicture(String url) throws IOException {
         URL facebookProfileURL = new URL(url);
-        return BitmapFactory.decodeStream(facebookProfileURL.openConnection().getInputStream());//returna bitmap
+        return BitmapFactory.decodeStream(facebookProfileURL.openConnection().getInputStream());//returns bitmap
     }
 
     @Override

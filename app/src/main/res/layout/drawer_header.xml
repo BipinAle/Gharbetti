@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/nav_email"
            android:layout_marginTop="10dp"
-            android:text="alebipin37@gmail.com"/>
+           />
 
 
 

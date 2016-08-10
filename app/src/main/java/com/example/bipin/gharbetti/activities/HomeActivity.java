@@ -22,6 +22,7 @@ import com.example.bipin.gharbetti.fragments.DueFrag;
 import com.example.bipin.gharbetti.fragments.PaidFrag;
 import com.example.bipin.gharbetti.R;
 import com.example.bipin.gharbetti.adapters.StatusViewPagerAdapter;
+import com.example.bipin.gharbetti.utility.Utilities;
 
 import java.io.IOException;
 
@@ -33,35 +34,40 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        if (android.os.Build.VERSION.SDK_INT > 9) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-        }
+
+        Utilities.networkOnMainThreadException();
+
         //this if case is to avoid Caused by: android.os.NetworkOnMainThreadException error
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.navigation_view);
-        View header = navigationView.getHeaderView(0);
-        ImageView imageView= (ImageView) header.findViewById(R.id.profile_image);
-        //Navigation populate garna lai Navigation vitra ko header vitra ko image,name ra email.
+        if (navigationView != null) {
+            View header = navigationView.getHeaderView(0);
+            ImageView imageView = (ImageView) header.findViewById(R.id.profile_image);
+            //Navigation populate garna lai Navigation vitra ko header vitra ko image,name ra email.
 
-        String picUrl=getIntent().getStringExtra("profilePicUrl");
-        Bitmap profilePic = null;
-        try {
-            profilePic = LoginActivity.getFacebookProfilePicture(picUrl);
-        } catch (IOException e) {
-            e.printStackTrace();
+            String picUrl = getIntent().getStringExtra("profilePicUrl");
+            Bitmap profilePic = null;
+            try {
+                profilePic = LoginActivity.getFacebookProfilePicture(picUrl);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            imageView.setImageBitmap(profilePic);
+
+            TextView nameTv = (TextView) header.findViewById(R.id.nav_name);
+            TextView emailTv = (TextView) header.findViewById(R.id.nav_email);
+
+            SharedPreferences prefs = getSharedPreferences("fbDetail", MODE_PRIVATE);
+            String name = prefs.getString("profilename", null);
+            String email = prefs.getString("profileEmail", null);
+            Log.e("name and email", name + email);
+
+
+            nameTv.setText(name);
+            emailTv.setText(email);
         }
-        imageView.setImageBitmap(profilePic);
 
-        TextView text = (TextView) header.findViewById(R.id.nav_name);
-
-        SharedPreferences prefs=getSharedPreferences("FbName",MODE_PRIVATE);
-        String name=prefs.getString("profileName",null);
-
-        text.setText(name);
-
-
-       Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         DrawerLayout drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
